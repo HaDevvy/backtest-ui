@@ -31,7 +31,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-backtest}:${POSTGRES_PASSWORD:-backtest}@postgres:5432/${POSTGRES_DB:-backtest}
     ports:
-      - "${UI_PORT:-8000}:8000"
+      - "127.0.0.1:${UI_PORT:-8000}:8000"
 
 volumes:
   pgdata:

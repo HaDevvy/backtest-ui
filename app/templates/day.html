@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, meter, stat with context %}
+{% block title %}{{ d.trade_date|fmt }} – {{ bt.name or bt.symbol }}{% endblock %}
+{% block crumbs %}<a href="/">Backtests</a><a href="/backtests/{{ bt.id }}">{{ bt.name or bt.symbol }}</a><a href="/backtests/{{ bt.id }}/days">Days</a><span>{{ d.trade_date|fmt }}</span>{% endblock %}
+{% block content %}
+<header class="run-head">
+  <h1>{{ d.trade_date|fmt }}</h1>
+  <p class="meta"><strong>{{ bt.symbol }}</strong> <span>Close {{ d.close_price|fmt }}</span> {{ badge(d.status) }}
+    <span class="muted">{{ d.attempts|fmt }} attempt{{ '' if d.attempts == 1 else 's' }}</span></p>
+  <div class="stepper">
+    {% if prev_d %}<a href="/backtests/{{ bt.id }}/days/{{ prev_d }}?tab={{ tab }}" rel="prev">Previous day</a>{% else %}<span class="off">Previous day</span>{% endif %}
+    {% if next_d %}<a href="/backtests/{{ bt.id }}/days/{{ next_d }}?tab={{ tab }}" rel="next">Next day</a>{% else %}<span class="off">Next day</span>{% endif %}
+  </div>
+</header>
+
+{% if d.error %}<div class="alert"><strong>The agent graph failed on this day and it was treated as hold</strong><pre>{{ d.error }}</pre></div>{% endif %}
+
+<nav class="tabs" aria-label="Day sections">
+  {% for key, label in [('decision', 'Decision'), ('market', 'Market and portfolio'), ('agents', 'Agents')] %}
+  <a class="{{ 'on' if tab == key }}" href="?tab={{ key }}">{{ label }}</a>
+  {% endfor %}
+</nav>
+
+{% if tab == 'decision' %}
+<section>
+  <h2>How the decision was made</h2>
+  <div class="pipeline">
+    <article class="step">
+      <h3>Proposed</h3>{{ badge(d.proposed_action) }}{{ meter(d.proposed_confidence) }}
+      <p>{{ d.proposed_reason or 'No reason recorded.' }}</p>
+    </article>
+    <article class="step">
+      <h3>Risk check</h3>{{ badge(d.risk_verdict) }}
+      {% if d.risk_level %}<span class="muted">{{ d.risk_level }} risk</span>{% endif %}
+      {{ meter(d.risk_confidence) }}
+      <p>{{ d.risk_reason or 'No reason recorded.' }}</p>
+    </article>
+    <article class="step final">
+      <h3>Final</h3>{{ badge(d.final_action) }}{{ meter(d.final_confidence) }}
+      <p>{{ d.final_reason or 'No reason recorded.' }}</p>
+    </article>
+  </div>
+</section>
+<section>
+  <h2>Fill on this day</h2>
+  {% if d.executed_action %}
+  <dl class="stats panel">
+    {{ stat("Action", d.executed_action) }}
+    {{ stat("Price", d.executed_price|fmt) }}
+    {{ stat("Shares", d.executed_shares|fmt) }}
+    {{ stat("Fee", d.executed_fee|fmt) }}
+    {{ stat("From signal of", d.executed_signal_date|fmt) }}
+  </dl>
+  {% else %}<div class="empty"><p>No order was filled on this day.</p></div>{% endif %}
+  <p class="muted">Position went from <strong>{{ d.position_before or '—' }}</strong> to <strong>{{ d.position_after or '—' }}</strong>.</p>
+</section>
+
+{% elif tab == 'market' %}
+<section>
+  <h2>Market</h2>
+  <dl class="stats panel">
+    {{ stat("Open", d.open_price|fmt) }}{{ stat("High", d.high_price|fmt) }}{{ stat("Low", d.low_price|fmt) }}
+    {{ stat("Close", d.close_price|fmt) }}{{ stat("Volume", d.volume|fmt) }}
+  </dl>
+</section>
+<section>
+  <h2>Portfolio</h2>
+  <dl class="stats panel">
+    {{ stat("Shares", d.shares|fmt) }}{{ stat("Cash", d.cash|fmt) }}{{ stat("Equity", d.equity|fmt) }}
+    {{ stat("Daily return", d.daily_return|pct, d.daily_return|tone) }}
+    {{ stat("Cumulative return", d.cumulative_return|pct, d.cumulative_return|tone) }}
+    {{ stat("Drawdown", d.drawdown|pct, d.drawdown|tone) }}
+  </dl>
+</section>
+<section>
+  <h2>Buy and hold</h2>
+  <dl class="stats panel">
+    {{ stat("Equity", d.buy_hold_equity|fmt) }}
+    {{ stat("Daily return", d.buy_hold_daily_return|pct, d.buy_hold_daily_return|tone) }}
+  </dl>
+  <p class="muted">Recorded {{ d.created_at|fmt }}, last updated {{ d.updated_at|fmt }}.</p>
+</section>
+
+{% else %}
+<section>
+  <h2>Agent responses</h2>
+  {% if attempts|length > 1 %}
+  <div class="chips">
+    {% for a in attempts %}<a class="chip {{ 'on' if a == attempt }}" href="{{ url_with(request, attempt=a) }}">Attempt {{ a }}</a>{% endfor %}
+  </div>
+  {% endif %}
+  {% if responses %}
+  <table class="list">
+    <thead><tr><th>Agent</th><th>Result</th><th class="num">Score</th><th class="num">Confidence</th><th class="num hide-sm">Time</th></tr></thead>
+    <tbody>
+    {% for r in responses %}
+      <tr>
+        <td><a class="title" href="/backtests/{{ bt.id }}/days/{{ d.trade_date }}/agents/{{ r.id }}">{{ r.agent }}</a>{% if r.status != 'ok' %} {{ badge(r.status) }}{% endif %}</td>
+        <td>{{ badge(r.label) }}</td>
+        <td class="num">{{ r.score|fmt }}</td>
+        <td class="num">{{ r.confidence|fmt }}</td>
+        <td class="num hide-sm muted">{% if r.duration_ms is not none %}{{ (r.duration_ms / 1000)|round(1) }}s{% else %}—{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<div class="empty"><p>No agent responses were stored for this day.</p></div>{% endif %}
+</section>
+{% endif %}
+{% endblock %}

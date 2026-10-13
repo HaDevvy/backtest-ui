@@ -1,0 +1,47 @@
+{% macro badge(value) -%}
+  {%- if value -%}<span class="badge b-{{ value|string|lower }}">{{ value }}</span>{%- else -%}<span class="muted">—</span>{%- endif -%}
+{%- endmacro %}
+
+{% macro meter(v) -%}
+  {%- if v is none -%}<span class="muted">No confidence recorded</span>
+  {%- else -%}
+    {%- set p = [ (v * 100 if v <= 1 else v), 100 ]|min -%}
+    <div class="meter" role="img" aria-label="Confidence {{ p|round|int }}%"><i style="width: {{ p }}%"></i></div>
+    <span class="muted">{{ p|round|int }}% confidence</span>
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro stat(label, value, cls="") -%}
+  <div><dt>{{ label }}</dt><dd class="{{ cls }}">{{ value }}</dd></div>
+{%- endmacro %}
+
+{% macro pager(pg) -%}
+  {%- if pg.pages > 1 %}
+  <nav class="pager" aria-label="Pagination">
+    {% if pg.page > 1 %}<a href="{{ url_with(request, page=pg.page - 1) }}">Previous</a>{% else %}<span></span>{% endif %}
+    <span class="muted">Page {{ pg.page }} of {{ pg.pages }}, {{ pg.total|fmt }} rows</span>
+    {% if pg.page < pg.pages %}<a href="{{ url_with(request, page=pg.page + 1) }}">Next</a>{% else %}<span></span>{% endif %}
+  </nav>
+  {% endif -%}
+{%- endmacro %}
+
+{# Renders any JSON value; nested objects and lists collapse so long outputs stay readable. #}
+{% macro tree(v, depth=0) -%}
+  {%- if v is mapping -%}
+    <div class="tree">
+    {%- for k, x in v.items() %}
+      {%- if x and (x is mapping or (x is sequence and x is not string)) %}
+      <details {{ 'open' if depth < 1 }}><summary>{{ k }} <span class="muted">({{ x|length }})</span></summary>{{ tree(x, depth + 1) }}</details>
+      {%- else %}
+      <dl class="kv"><dt>{{ k }}</dt><dd>{{ x|fmt }}</dd></dl>
+      {%- endif %}
+    {%- endfor %}
+    </div>
+  {%- elif v is sequence and v is not string -%}
+    <ol class="tree-list">
+    {%- for x in v %}<li>
+      {%- if x and (x is mapping or (x is sequence and x is not string)) %}{{ tree(x, depth + 1) }}{% else %}{{ x|fmt }}{% endif -%}
+    </li>{% endfor %}
+    </ol>
+  {%- else -%}{{ v|fmt }}{%- endif -%}
+{%- endmacro %}

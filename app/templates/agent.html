@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, stat, tree with context %}
+{% set day_url = '/backtests/' ~ bt.id ~ '/days/' ~ d.trade_date %}
+{% block title %}{{ r.agent }} – {{ d.trade_date|fmt }}{% endblock %}
+{% block crumbs %}<a href="/">Backtests</a><a href="/backtests/{{ bt.id }}">{{ bt.name or bt.symbol }}</a><a href="{{ day_url }}?tab=agents">{{ d.trade_date|fmt }}</a><span>{{ r.agent }}</span>{% endblock %}
+{% block content %}
+<header class="run-head">
+  <h1>{{ r.agent }}</h1>
+  <p class="meta"><span>{{ d.trade_date|fmt }}</span> {{ badge(r.status) }} {% if r.label %}{{ badge(r.label) }}{% endif %}</p>
+  <div class="stepper">
+    {% if prev_r %}<a href="{{ day_url }}/agents/{{ prev_r[0] }}" rel="prev">{{ prev_r[1] }}</a>{% else %}<span class="off">First agent</span>{% endif %}
+    {% if next_r %}<a href="{{ day_url }}/agents/{{ next_r[0] }}" rel="next">{{ next_r[1] }}</a>{% else %}<span class="off">Last agent</span>{% endif %}
+  </div>
+</header>
+
+{% if r.error %}<div class="alert"><strong>This agent failed</strong><pre>{{ r.error }}</pre></div>{% endif %}
+
+<dl class="stats panel">
+  {{ stat("Score", r.score|fmt) }}{{ stat("Confidence", r.confidence|fmt) }}{{ stat("Attempt", r.attempt|fmt) }}
+  {{ stat("Started", r.started_at|fmt) }}
+  {{ stat("Duration", ((r.duration_ms / 1000)|round(2) ~ 's') if r.duration_ms is not none else '—') }}
+</dl>
+
+<nav class="tabs" aria-label="Agent data">
+  <a class="{{ 'on' if view == 'output' }}" href="?view=output">Output</a>
+  <a class="{{ 'on' if view == 'inputs' }}" href="?view=inputs">Evidence given</a>
+</nav>
+
+<div class="panel">
+  {% set data = r.output if view == 'output' else r.inputs %}
+  {% if data %}{{ tree(data) }}
+  {% elif view == 'inputs' %}<p class="muted">No evidence stored. Only specialist agents record their inputs.</p>
+  {% else %}<p class="muted">No output stored for this response.</p>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "backtest_base.html" %}
+{% from "_macros.html" import badge, pager with context %}
+{% block tab %}
+<div class="toolbar">
+  <div class="chips">
+    {% for key, label in [('', 'All'), ('buy', 'Buy'), ('sell', 'Sell'), ('hold', 'Hold'), ('error', 'Errors')] %}
+    <a class="chip {{ 'on' if action == key }}" href="{{ url_with(request, action=key, page=None) }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+  <span class="muted">Final signal of each day</span>
+</div>
+{% if rows %}
+<table class="list">
+  <thead><tr><th>Date</th><th class="num">Close</th><th>Signal</th><th class="hide-sm">Position</th><th class="num">Equity</th><th class="num">Day</th><th class="hide-sm">Status</th></tr></thead>
+  <tbody>
+  {% for d in rows %}
+    <tr>
+      <td><a class="title" href="/backtests/{{ bt.id }}/days/{{ d.trade_date }}">{{ d.trade_date|fmt }}</a></td>
+      <td class="num">{{ d.close_price|fmt }}</td>
+      <td>{{ badge(d.final_action) }}</td>
+      <td class="hide-sm">{{ d.position_after or '—' }}</td>
+      <td class="num">{{ d.equity|fmt }}</td>
+      <td class="num {{ d.daily_return|tone }}">{{ d.daily_return|pct }}</td>
+      <td class="hide-sm">{{ badge(d.status) }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{{ pager(pg) }}
+{% else %}<div class="empty"><p><strong>No days to show.</strong></p>{% if action %}<p><a href="{{ url_with(request, action=None, page=None) }}">Clear the filter</a></p>{% endif %}</div>{% endif %}
+{% endblock %}

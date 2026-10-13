@@ -1,0 +1,51 @@
+{% extends "backtest_base.html" %}
+{% from "_macros.html" import stat with context %}
+{% block tab %}
+{% if bt.error %}<div class="alert"><strong>This run reported an error</strong><pre>{{ bt.error }}</pre></div>{% endif %}
+
+{% if heads %}
+<div class="tiles">
+  {% for k, v in heads %}<div class="tile"><span class="lbl">{{ k|pretty_key }}</span><span class="val">{{ v|fmt }}</span></div>{% endfor %}
+</div>
+{% elif bt.status == 'running' %}
+<p class="muted">Metrics appear when the run finishes.</p>
+{% endif %}
+
+<section>
+  <h2>Equity curve</h2>
+  {% if chart %}
+  <div class="panel chart">{{ chart }}
+    <p class="legend"><span class="k eq"></span>Strategy <span class="k bh"></span>Buy and hold <span class="k buy"></span>Buy fill <span class="k sell"></span>Sell fill</p>
+  </div>
+  {% else %}<div class="empty"><p>Not enough days recorded to draw a curve yet.</p></div>{% endif %}
+</section>
+
+{% if images.equity %}
+<section>
+  <h2>Report chart</h2>
+  <figure class="frame"><a href="/backtests/{{ bt.id }}/equity.png"><img src="/backtests/{{ bt.id }}/equity.png" alt="Equity curve and trades rendered by the backtest" loading="lazy"></a></figure>
+</section>
+{% endif %}
+
+<section>
+  <h2>Run details</h2>
+  <dl class="stats panel">
+    {{ stat("Run id", bt.id) }}
+    {{ stat("Started", bt.created_at|fmt) }}
+    {{ stat("Finished", bt.finished_at|fmt) }}
+    {{ stat("Duration", bt.created_at|duration(bt.finished_at)) }}
+    {{ stat("Days recorded", summary.days|fmt) }}
+    {{ stat("Days with errors", summary.errors|fmt, 'neg' if summary.errors) }}
+    {{ stat("Fills", summary.fills|fmt) }}
+  </dl>
+</section>
+
+{% if metrics %}
+<section>
+  <h2>All metrics</h2>
+  <details class="panel fold"><summary>Show {{ metrics|length }} metrics</summary>
+    <dl class="stats">{% for k, v in metrics %}{{ stat(k|pretty_key, v|fmt) }}{% endfor %}</dl>
+  </details>
+</section>
+{% endif %}
+{% endblock %}

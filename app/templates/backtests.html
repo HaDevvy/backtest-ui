@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, pager with context %}
+{% block content %}
+<h1>Backtests</h1>
+<p class="lede">{{ totals.values()|sum }} run{{ '' if totals.values()|sum == 1 else 's' }} recorded.</p>
+
+<div class="toolbar">
+  <div class="chips">
+    <a class="chip {{ 'on' if not status }}" href="{{ url_with(request, status=None, page=None) }}">All <span>{{ totals.values()|sum }}</span></a>
+    {% for st in statuses %}
+    <a class="chip {{ 'on' if status == st }}" href="{{ url_with(request, status=st, page=None) }}">{{ st|capitalize }} <span>{{ totals.get(st, 0) }}</span></a>
+    {% endfor %}
+  </div>
+  <form class="search" method="get">
+    {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+    <input type="search" name="q" value="{{ q }}" placeholder="Search name or symbol" aria-label="Search by name or symbol">
+  </form>
+</div>
+
+{% if rows %}
+<table class="list">
+  <thead><tr><th>Run</th><th>Period</th><th>Status</th><th class="num hide-sm">Days</th><th class="hide-sm">Key metrics</th><th class="hide-sm">Started</th></tr></thead>
+  <tbody>
+  {% for b in rows %}
+    <tr>
+      <td><a class="title" href="/backtests/{{ b.id }}">{{ b.name or (b.symbol ~ ' backtest') }}</a><div class="sub">{{ b.symbol }}</div></td>
+      <td>{{ b.start_date|fmt }} to {{ b.end_date|fmt }}</td>
+      <td>{{ badge(b.status) }}</td>
+      <td class="num hide-sm">{{ day_counts.get(b.id, 0)|fmt }}</td>
+      <td class="hide-sm">{% for k, v in (b.metrics|headline(3)) %}<div class="m"><span class="muted">{{ k|pretty_key }}</span> {{ v|fmt }}</div>{% else %}<span class="muted">—</span>{% endfor %}</td>
+      <td class="hide-sm muted">{{ b.created_at|fmt }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{{ pager(pg) }}
+{% else %}
+<div class="empty">
+  {% if status or q %}<p><strong>No runs match these filters.</strong></p><p><a href="/">Clear filters</a></p>
+  {% else %}<p><strong>No backtests yet.</strong></p><p>Start a backtest and it will appear here as soon as its first row is written.</p>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

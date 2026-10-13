@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block head %}<meta http-equiv="refresh" content="5">{% endblock %}
+{% block content %}
+<div class="empty wait">
+  {% if missing_tables %}
+  <h1>Waiting for the backtest tables</h1>
+  <p>The database is running but the tables don't exist yet. Start your backtest process once: it creates them. This page checks again every 5 seconds.</p>
+  {% else %}
+  <h1>Can't reach the database</h1>
+  <p>Check that the postgres service is running and that DATABASE_URL is correct. This page checks again every 5 seconds.</p>
+  {% endif %}
+  <pre class="code">{{ detail }}</pre>
+</div>
+{% endblock %}

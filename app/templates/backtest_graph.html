@@ -1,0 +1,22 @@
+{% extends "backtest_base.html" %}
+{% block head %}
+{% if not images.graph %}<script type="module">
+  try { const m = await import("https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"); m.default.initialize({startOnLoad:false}); await m.default.run({querySelector: "pre.mermaid"}); } catch (e) {}
+</script>{% endif %}
+{% endblock %}
+{% block tab %}
+<section>
+  <h2>Agent graph</h2>
+  {% if images.graph %}
+  <figure class="frame"><a href="/backtests/{{ bt.id }}/graph.png"><img src="/backtests/{{ bt.id }}/graph.png" alt="Agent graph used by this run" loading="lazy"></a></figure>
+  {% else %}
+  <div class="panel"><pre class="mermaid">{{ bt.graph_mermaid }}</pre></div>
+  <p class="muted">No rendered image was stored, so the diagram is drawn from the Mermaid source (needs internet access). The source is below.</p>
+  {% endif %}
+</section>
+<section>
+  <h2>Definitions</h2>
+  <details class="panel fold"><summary>YAML</summary><pre class="code">{{ bt.graph_yaml }}</pre></details>
+  <details class="panel fold"><summary>Mermaid source</summary><pre class="code">{{ bt.graph_mermaid }}</pre></details>
+</section>
+{% endblock %}

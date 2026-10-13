@@ -1,0 +1,9 @@
+{% extends "backtest_base.html" %}
+{% from "_macros.html" import tree with context %}
+{% block tab %}
+<section>
+  <h2>Settings</h2>
+  <p class="muted">Everything needed to reproduce this run.</p>
+  <div class="panel">{{ tree(bt.settings or {}) }}</div>
+</section>
+{% endblock %}

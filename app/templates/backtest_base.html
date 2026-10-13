@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ bt.name or bt.symbol }}{% endblock %}
+{% block crumbs %}<a href="/">Backtests</a><span>{{ bt.name or bt.symbol }}</span>{% endblock %}
+{% block content %}
+{% from "_macros.html" import badge with context %}
+<header class="run-head">
+  <h1>{{ bt.name or (bt.symbol ~ ' backtest') }}</h1>
+  <p class="meta"><strong>{{ bt.symbol }}</strong> <span>{{ bt.start_date|fmt }} to {{ bt.end_date|fmt }}</span> {{ badge(bt.status) }}</p>
+</header>
+<nav class="tabs" aria-label="Backtest sections">
+  <a class="{{ 'on' if tab == 'overview' }}" href="/backtests/{{ bt.id }}">Overview</a>
+  <a class="{{ 'on' if tab == 'days' }}" href="/backtests/{{ bt.id }}/days">Days <span class="muted">{{ summary.days|fmt }}</span></a>
+  <a class="{{ 'on' if tab == 'graph' }}" href="/backtests/{{ bt.id }}/graph">Agent graph</a>
+  <a class="{{ 'on' if tab == 'settings' }}" href="/backtests/{{ bt.id }}/settings">Settings</a>
+</nav>
+{% block tab %}{% endblock %}
+{% endblock %}

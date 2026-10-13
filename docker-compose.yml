@@ -13,7 +13,7 @@ services:
     ports:
       # Exposed so the backtest process on the host can write to it:
       # postgresql://backtest:backtest@localhost:5432/backtest
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

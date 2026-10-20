@@ -68,9 +68,14 @@ def day_summary(s: Session, bid: uuid.UUID) -> dict:
             func.count(),
             func.count().filter(Day.status == "error"),
             func.count(Day.executed_action),
+            func.count().filter(Day.recheck_rounds > 0),
+            func.coalesce(func.sum(Day.recheck_rounds), 0),
         ).where(Day.backtest_id == bid)
     ).one()
-    return {"days": row[0], "errors": row[1], "fills": row[2]}
+    return {
+        "days": row[0], "errors": row[1], "fills": row[2],
+        "rechecked_days": row[3], "recheck_rounds": int(row[4]),
+    }
 
 
 def equity_points(s: Session, bid: uuid.UUID) -> list[dict]:
@@ -85,6 +90,8 @@ def list_days(s: Session, bid: uuid.UUID, action: str, page: int):
     conds = [Day.backtest_id == bid]
     if action == "error":
         conds.append(Day.status == "error")
+    elif action == "rechecked":
+        conds.append(Day.recheck_rounds > 0)
     elif action in ("buy", "sell", "hold"):
         conds.append(func.lower(Day.final_action) == action)
     total = s.scalar(select(func.count()).select_from(Day).where(*conds)) or 0

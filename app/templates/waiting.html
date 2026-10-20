@@ -5,6 +5,9 @@
   {% if missing_tables %}
   <h1>Waiting for the backtest tables</h1>
   <p>The database is running but the tables don't exist yet. Start your backtest process once: it creates them. This page checks again every 5 seconds.</p>
+  {% elif outdated_schema %}
+  <h1>The database schema is out of date</h1>
+  <p>The tables exist but are missing columns this version of the UI reads (the review fields). <code>create_all</code> doesn't add columns to existing tables, so run <code>migrations/001_add_review_columns.sql</code> once against the database. This page checks again every 5 seconds.</p>
   {% else %}
   <h1>Can't reach the database</h1>
   <p>Check that the postgres service is running and that DATABASE_URL is correct. This page checks again every 5 seconds.</p>

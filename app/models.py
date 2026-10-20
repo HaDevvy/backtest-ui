@@ -104,7 +104,7 @@ class Backtest(Base):
 
 
 class BacktestDay(Base):
-    __tablename__ = "backtest_days"
+    __tablename__ = "backtest_days" 
     __table_args__ = (
         UniqueConstraint("backtest_id", "trade_date", name="uq_backtest_day"),
     )
@@ -135,6 +135,8 @@ class BacktestDay(Base):
     proposed_confidence: Mapped[Optional[float]] = mapped_column(Float)
     proposed_reason: Mapped[Optional[str]] = mapped_column(Text)
 
+    # Deprecated: kept nullable to avoid breaking existing database tables.
+    # New runs leave this NULL; risk_level carries the assessment.
     risk_verdict: Mapped[Optional[str]] = mapped_column(String(10))
     risk_level: Mapped[Optional[str]] = mapped_column(String(10))
     risk_confidence: Mapped[Optional[float]] = mapped_column(Float)
@@ -172,6 +174,31 @@ class BacktestDay(Base):
     )
 
     backtest: Mapped["Backtest"] = relationship(back_populates="days")
+
+    review_verdict: Mapped[Optional[str]] = mapped_column(
+        String(20)
+    )
+
+    review_confidence: Mapped[Optional[float]] = mapped_column(
+        Float
+    )
+
+    review_reason: Mapped[Optional[str]] = mapped_column(
+        Text
+    )
+
+    # Number of recheck rounds, not number of agents.
+    recheck_rounds: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+    )
+
+    # Final action permitted by the reviewer.
+    # NULL means no approved action.
+    approved_action: Mapped[Optional[str]] = mapped_column(
+        String(10)
+    )
+
     agent_responses: Mapped[list["BacktestAgentResponse"]] = relationship(
         back_populates="day",
         cascade="all, delete-orphan",
@@ -212,7 +239,7 @@ class BacktestAgentResponse(Base):
 
     # Quick-query fields extracted from the output:
     #   specialists -> bullish/neutral/bearish, decision -> buy/hold/sell,
-    #   risk        -> approve/veto
+    #   risk        -> low/medium/high/unknown
     label: Mapped[Optional[str]] = mapped_column(String(20))
     score: Mapped[Optional[float]] = mapped_column(Float)
     confidence: Mapped[Optional[float]] = mapped_column(Float)
@@ -229,3 +256,8 @@ class BacktestAgentResponse(Base):
     duration_ms: Mapped[Optional[int]] = mapped_column(Integer)
 
     day: Mapped["BacktestDay"] = relationship(back_populates="agent_responses")
+
+    review_round: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        nullable=True,
+    )

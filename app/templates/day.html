@@ -6,7 +6,8 @@
 <header class="run-head">
   <h1>{{ d.trade_date|fmt }}</h1>
   <p class="meta"><strong>{{ bt.symbol }}</strong> <span>Close {{ d.close_price|fmt }}</span> {{ badge(d.status) }}
-    <span class="muted">{{ d.attempts|fmt }} attempt{{ '' if d.attempts == 1 else 's' }}</span></p>
+    <span class="muted">{{ d.attempts|fmt }} attempt{{ '' if d.attempts == 1 else 's' }}</span>
+    {% if d.recheck_rounds %}<span class="muted">{{ d.recheck_rounds|fmt }} recheck round{{ '' if d.recheck_rounds == 1 else 's' }}</span>{% endif %}</p>
   <div class="stepper">
     {% if prev_d %}<a href="/backtests/{{ bt.id }}/days/{{ prev_d }}?tab={{ tab }}" rel="prev">Previous day</a>{% else %}<span class="off">Previous day</span>{% endif %}
     {% if next_d %}<a href="/backtests/{{ bt.id }}/days/{{ next_d }}?tab={{ tab }}" rel="next">Next day</a>{% else %}<span class="off">Next day</span>{% endif %}
@@ -24,17 +25,30 @@
 {% if tab == 'decision' %}
 <section>
   <h2>How the decision was made</h2>
+  {% set has_review = d.review_verdict or d.review_reason or d.approved_action or d.review_confidence is not none or d.recheck_rounds %}
   <div class="pipeline">
     <article class="step">
       <h3>Proposed</h3>{{ badge(d.proposed_action) }}{{ meter(d.proposed_confidence) }}
       <p>{{ d.proposed_reason or 'No reason recorded.' }}</p>
     </article>
     <article class="step">
-      <h3>Risk check</h3>{{ badge(d.risk_verdict) }}
-      {% if d.risk_level %}<span class="muted">{{ d.risk_level }} risk</span>{% endif %}
+      <h3>Risk level</h3>
+      {{ badge(d.risk_level) }}
+      {% if d.risk_verdict %}<span class="muted">Legacy verdict {{ badge(d.risk_verdict) }}</span>{% endif %}
       {{ meter(d.risk_confidence) }}
       <p>{{ d.risk_reason or 'No reason recorded.' }}</p>
     </article>
+    {% if has_review %}
+    <article class="step">
+      <h3>Review</h3>
+      {{ badge(d.review_verdict) }}
+      {{ meter(d.review_confidence) }}
+      <span class="muted">{% if d.recheck_rounds %}{{ d.recheck_rounds|fmt }} recheck round{{ '' if d.recheck_rounds == 1 else 's' }}{% else %}No recheck needed{% endif %}</span>
+      <p>{{ d.review_reason or 'No reason recorded.' }}</p>
+      <div class="step-foot"><span class="muted">Approved action</span>
+        {% if d.approved_action %}{{ badge(d.approved_action) }}{% else %}<span class="muted">None approved</span>{% endif %}</div>
+    </article>
+    {% endif %}
     <article class="step final">
       <h3>Final</h3>{{ badge(d.final_action) }}{{ meter(d.final_confidence) }}
       <p>{{ d.final_reason or 'No reason recorded.' }}</p>
@@ -91,16 +105,19 @@
   {% endif %}
   {% if responses %}
   <table class="list">
-    <thead><tr><th>Agent</th><th>Result</th><th class="num">Score</th><th class="num">Confidence</th><th class="num hide-sm">Time</th></tr></thead>
+    {% set ns = namespace(last=none) %}
+    <thead><tr><th>Agent</th><th class="num hide-sm">Review round</th><th>Result</th><th class="num">Score</th><th class="num">Confidence</th><th class="num hide-sm">Time</th></tr></thead>
     <tbody>
     {% for r in responses %}
-      <tr>
+      <tr{% if not loop.first and r.review_round != ns.last %} class="round-break"{% endif %}>
         <td><a class="title" href="/backtests/{{ bt.id }}/days/{{ d.trade_date }}/agents/{{ r.id }}">{{ r.agent }}</a>{% if r.status != 'ok' %} {{ badge(r.status) }}{% endif %}</td>
+        <td class="num hide-sm muted">{{ r.review_round|fmt }}</td>
         <td>{{ badge(r.label) }}</td>
         <td class="num">{{ r.score|fmt }}</td>
         <td class="num">{{ r.confidence|fmt }}</td>
         <td class="num hide-sm muted">{% if r.duration_ms is not none %}{{ (r.duration_ms / 1000)|round(1) }}s{% else %}—{% endif %}</td>
       </tr>
+      {% set ns.last = r.review_round %}
     {% endfor %}
     </tbody>
   </table>

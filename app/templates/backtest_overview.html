@@ -37,6 +37,8 @@
     {{ stat("Days recorded", summary.days|fmt) }}
     {{ stat("Days with errors", summary.errors|fmt, 'neg' if summary.errors) }}
     {{ stat("Fills", summary.fills|fmt) }}
+    {{ stat("Days rechecked", summary.rechecked_days|fmt) }}
+    {{ stat("Recheck rounds", summary.recheck_rounds|fmt) }}
   </dl>
 </section>
 

@@ -17,6 +17,7 @@
 
 <dl class="stats panel">
   {{ stat("Score", r.score|fmt) }}{{ stat("Confidence", r.confidence|fmt) }}{{ stat("Attempt", r.attempt|fmt) }}
+  {{ stat("Review round", r.review_round|fmt) }}
   {{ stat("Started", r.started_at|fmt) }}
   {{ stat("Duration", ((r.duration_ms / 1000)|round(2) ~ 's') if r.duration_ms is not none else '—') }}
 </dl>

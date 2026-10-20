@@ -75,6 +75,9 @@ async def db_not_ready(request: Request, exc):
     kind = type(getattr(exc, "orig", exc)).__name__
     return render(request, "waiting.html", status_code=503,
                   missing_tables=(kind == "UndefinedTable"),
+                  # create_all never adds columns to existing tables, so a database
+                  # created before the review fields existed needs the migration.
+                  outdated_schema=(kind == "UndefinedColumn"),
                   detail=str(getattr(exc, "orig", exc)).splitlines()[0])
 
 
